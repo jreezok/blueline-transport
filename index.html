@@ -1,0 +1,152 @@
+<script>
+/* =====================
+   ADMIN AYARLARI
+===================== */
+const ADMIN_KULLANICI = "jreezok";
+const ADMIN_SIFRE = "5990890123Aras.";
+
+/* =====================
+   HABERLERİ YÜKLE
+===================== */
+function loadNews() {
+  const container = document.getElementById("newsContainer");
+  if (!container) return;
+
+  const news = JSON.parse(localStorage.getItem("vtcNews")) || [];
+  container.innerHTML = "";
+
+  news.reverse().forEach((item, index) => {
+    container.innerHTML += `
+      <div class="card">
+        ${item.image ? `<img src="${item.image}" style="width:100%;border-radius:12px;margin-bottom:10px;">` : ""}
+        <div>${item.content}</div>
+        <small style="opacity:.6;">${item.date}</small>
+        ${window.isAdmin ? `
+          <div style="margin-top:10px;">
+            <button onclick="editNews(${index})">✏️ Düzenle</button>
+            <button onclick="deleteNews(${index})">🗑 Sil</button>
+          </div>` : ""}
+      </div>
+    `;
+  });
+}
+
+/* =====================
+   ADMIN GİRİŞ
+===================== */
+let isAdmin = false;
+window.onload = () => {
+  const u = prompt("Admin Kullanıcı:");
+  const p = prompt("Admin Şifre:");
+
+  if (u === ADMIN_KULLANICI && p === ADMIN_SIFRE) {
+    isAdmin = true;
+    createAdminButton();
+  }
+  loadNews();
+};
+
+/* =====================
+   ADMIN BUTONU
+===================== */
+function createAdminButton() {
+  const btn = document.createElement("button");
+  btn.textContent = "🛠 Haber Ekle";
+  btn.style = `
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    z-index:999;
+  `;
+  btn.onclick = openPopup;
+  document.body.appendChild(btn);
+}
+
+/* =====================
+   POPUP (EKLE / DÜZENLE)
+===================== */
+function openPopup(editIndex = null) {
+  const news = JSON.parse(localStorage.getItem("vtcNews")) || [];
+  const current = editIndex !== null ? news[editIndex] : {};
+
+  const popup = document.createElement("div");
+  popup.style = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.7);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+  `;
+
+  popup.innerHTML = `
+    <div style="background:#020617;padding:20px;border-radius:14px;width:420px;">
+      <h3>${editIndex !== null ? "✏️ Haber Düzenle" : "📰 Haber Ekle"}</h3>
+
+      <input type="file" id="newsImg"><br><br>
+
+      <button onclick="document.execCommand('bold')"><b>B</b></button>
+      <button onclick="document.execCommand('italic')"><i>I</i></button>
+
+      <div id="newsText" contenteditable="true"
+        style="border:1px solid #1e293b;padding:10px;margin-top:10px;border-radius:8px;min-height:80px;">
+        ${current.content || ""}
+      </div>
+
+      <br>
+      <button onclick="saveNews(${editIndex})">Kaydet</button>
+      <button onclick="this.closest('div').parentElement.remove()">İptal</button>
+    </div>
+  `;
+  document.body.appendChild(popup);
+}
+
+/* =====================
+   KAYDET
+===================== */
+function saveNews(editIndex) {
+  const text = document.getElementById("newsText").innerHTML;
+  const imgInput = document.getElementById("newsImg");
+
+  let news = JSON.parse(localStorage.getItem("vtcNews")) || [];
+  let image = editIndex !== null ? news[editIndex].image : "";
+
+  if (imgInput.files[0]) {
+    image = URL.createObjectURL(imgInput.files[0]);
+  }
+
+  const item = {
+    content: text,
+    image: image,
+    date: new Date().toLocaleString("tr-TR")
+  };
+
+  if (editIndex !== null) {
+    news[editIndex] = item;
+  } else {
+    news.push(item);
+  }
+
+  localStorage.setItem("vtcNews", JSON.stringify(news));
+  location.reload();
+}
+
+/* =====================
+   HABER SİL
+===================== */
+function deleteNews(index) {
+  if (!confirm("Haberi silmek istiyor musun?")) return;
+  let news = JSON.parse(localStorage.getItem("vtcNews")) || [];
+  news.splice(index, 1);
+  localStorage.setItem("vtcNews", JSON.stringify(news));
+  location.reload();
+}
+
+/* =====================
+   HABER DÜZENLE
+===================== */
+function editNews(index) {
+  openPopup(index);
+}
+</script>
